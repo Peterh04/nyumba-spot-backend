@@ -7,6 +7,7 @@ import "./models/PropertyModel.js";
 import "./models/MoveInCost.js";
 import "./models/PropertyMedia.js";
 import "./models/PropertyMoveInCost.js";
+import "./models/RuleRequirement.js";
 
 dotenv.config();
 
