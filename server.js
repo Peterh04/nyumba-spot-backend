@@ -1,7 +1,17 @@
 import express from "express";
 import dotenv from "dotenv";
+import sequelize from "./config/db.js";
+
+import "./models/PropertyAmenity.js";
+import "./models/PropertyModel.js";
 
 dotenv.config();
+
+sequelize
+  .sync({
+    alter: true,
+  })
+  .then(() => console.log("Db connected successfully"));
 
 const port = process.env.PORT || 5500;
 
