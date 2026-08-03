@@ -4,6 +4,9 @@ import sequelize from "./config/db.js";
 
 import "./models/PropertyAmenity.js";
 import "./models/PropertyModel.js";
+import "./models/MoveInCost.js";
+import "./models/PropertyMedia.js";
+import "./models/PropertyMoveInCost.js";
 
 dotenv.config();
 
