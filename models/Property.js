@@ -74,3 +74,5 @@ const Property = sequelize.define("Property", {
     allowNull: false,
   },
 });
+
+export default Property;

@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
-const PropertyAmenity = sequelize.define("PropertyAmenity", {
+const Amenity = sequelize.define("Amenity", {
   id: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -18,4 +18,4 @@ const PropertyAmenity = sequelize.define("PropertyAmenity", {
   },
 });
 
-export default PropertyAmenity;
+export default Amenity;

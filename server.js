@@ -2,12 +2,15 @@ import express from "express";
 import dotenv from "dotenv";
 import sequelize from "./config/db.js";
 
-import "./models/PropertyAmenity.js";
-import "./models/PropertyModel.js";
+import "./models/Amenity.js";
+import "./models/Property.js";
 import "./models/MoveInCost.js";
 import "./models/PropertyMedia.js";
 import "./models/PropertyMoveInCost.js";
 import "./models/RuleRequirement.js";
+import "./models/associations.js";
+import "./models/User.js";
+import "./models/Review.js";
 
 dotenv.config();
 

@@ -1,5 +1,5 @@
 import sequelize from "../config/db.js";
-import PropertyAmenity from "../models/PropertyAmenity.js";
+import PropertyAmenity from "../models/Amenity.js";
 
 const amenities = [
   // Internet & Connectivity
