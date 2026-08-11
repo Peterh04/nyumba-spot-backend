@@ -4,6 +4,7 @@ import { checkNumberFields } from "../utils/validation/checkNumberFields.js";
 import { checkPositiveNumberFields } from "../utils/validation/checkPositiveNumberFields.js";
 import { checkRangeFields } from "../utils/validation/checkRangeFields.js";
 import { checkRequiredFields } from "../utils/validation/checkRequiredFields.js";
+import { checkStringFields } from "../utils/validation/checkStringFields.js";
 
 export const createProperty = async (req, res) => {
   try {
@@ -146,25 +147,100 @@ export const createProperty = async (req, res) => {
 
 export const updateProperty = async (req, res) => {
   try {
-    const { description, price };
-    const propertyId = Number(req.params.id);
+    const { description, price, furnished } = req.body;
 
-    const updateField = {};
+    const propertyId = Number(req.params.id);
+    if (!propertyId.isInteger(req.params.id))
+      return res.status(400).json({
+        message: "Property ID must be an integer.",
+      });
+
+    const allowedFields = ["description", "price", "furnished"];
+    const fields = Object.keys(req.body);
+
+    if (fields.length === 0)
+      return res.status(400).json({ message: "No fields provided for update" });
+
+    const invalidFields = fields.filter(
+      (field) => !allowedFields.includes(field),
+    );
+
+    if (invalidFields.length > 0)
+      return res.status(400).json({
+        message: "Invalid updatable fields",
+        fields: invalidFields,
+      });
+
+    const updateFields = {};
 
     const numberField = {
       id: propertyId,
+      ...(fields.includes("price") ? { price } : {}),
     };
 
-    const update;
-    if (checkNumberFields(numberField).length > 0)
+    const stringFields = {
+      ...(fields.includes("description") ? { description } : {}),
+    };
+
+    const booleanFields = {
+      ...(fields.includes("furnished") ? { furnished } : {}),
+    };
+
+    const invalidNumberFields = checkNumberFields(numberField);
+    const invalidStringFields = checkStringFields(stringFields);
+    const invalidPositiveNumberFields = checkPositiveNumberFields(numberField);
+    const invalidBooleanPropertyFields = checkBooleanFields(booleanFields);
+
+    if (invalidNumberFields.includes("id")) {
       return res.status(400).json({
         message: "propertyId should be a number.",
       });
+    }
 
-    if (checkPositiveNumberFields(numberField).length > 0)
+    if (invalidPositiveNumberFields.includes("id")) {
       return res.status(400).json({
         message: "Invalid poitive propertyId number.",
       });
+    }
+
+    if (invalidNumberFields.includes("price")) {
+      return res.status(400).json({
+        message: "Price should be a number.",
+      });
+    }
+
+    if (invalidPositiveNumberFields.includes("price")) {
+      return res.status(400).json({
+        message: "Invalid poitive price number.",
+      });
+    }
+
+    if (invalidStringFields.length > 0) {
+      return res.status(400).json({
+        message: "Description must be a non empty string",
+      });
+    }
+
+    if (invalidBooleanPropertyFields.length > 0) {
+      return res.status(400).json({
+        message: "furnished should be a boolean",
+      });
+    }
+
+    if (fields.includes("description")) updateFields.description = description;
+    if (fields.includes("price")) updateFields.price = price;
+    if (fields.includes("furnished")) updateFields.furnished = furnished;
+
+    const property = await Property.findByPk(propertyId);
+
+    if (!property)
+      return res.status(404).json({ message: "Property not found!" });
+
+    await property.update(updateFields);
+
+    res.status(200).json({
+      message: "Successfully updated the property",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
