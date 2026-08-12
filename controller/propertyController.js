@@ -22,6 +22,7 @@ export const createProperty = async (req, res) => {
       address,
       latitude,
       longitude,
+      unit,
     } = req.body;
 
     const requiredPropertyValues = {
@@ -39,6 +40,15 @@ export const createProperty = async (req, res) => {
       latitude,
       longitude,
     };
+
+    const propetiesTypes = [
+      "Apartment",
+      "Bungalow",
+      "Maisonette",
+      "Townhouse",
+      "Villa",
+      "Standalone House",
+    ];
 
     const booleanPropertyValues = {
       furnished,
@@ -85,6 +95,8 @@ export const createProperty = async (req, res) => {
 
     const invalidPropertyRangeValues = checkRangeFields(rangePropertyValues);
 
+    const trimmedUnit = unit?.trim();
+
     if (missingRequiredPropertyValues.length > 0)
       return res.status(400).json({
         message: "Missing required fields",
@@ -104,7 +116,7 @@ export const createProperty = async (req, res) => {
       });
     }
 
-    if (invalidPositvePropertyValues.length > 0) {
+    if (invalidPositivePropertyValues.length > 0) {
       return res.status(400).json({
         message: "Invalid positve number fields.",
         fields: invalidPositivePropertyValues,
@@ -118,6 +130,29 @@ export const createProperty = async (req, res) => {
       });
     }
 
+    if (!propetiesTypes.includes(propertyType))
+      return res.status(400).json({
+        message:
+          "Invalid Property type, Only types allowed : Apartment,Bungalow,Maisonette,Townhouse,Vill or Standalone House",
+      });
+
+    if (propertyType === "Apartment" && (unit == null || trimmedUnit === ""))
+      return res
+        .status(400)
+        .json({ message: "Unit identifier is required for apartments" });
+
+    const existingProperty =
+      propertyType === "Apartment"
+        ? await Property.findOne({
+            where: { unit: trimmedUnit, name: name, address: address },
+          })
+        : await Property.findOne({
+            where: { name, address, latitude, longitude },
+          });
+
+    if (existingProperty)
+      return res.status(400).json({ message: "Similar property unit exists" });
+
     const property = await Property.create({
       name,
       description,
@@ -129,6 +164,7 @@ export const createProperty = async (req, res) => {
       furnished,
       parking,
       floorLevel,
+      unit: trimmedUnit,
       address,
       latitude,
       longitude,
@@ -251,7 +287,7 @@ export const updateProperty = async (req, res) => {
 
 export const deleteProperty = async (req, res) => {
   try {
-    const propertyId = Number(req.params.id);
+    const propertyId = Number(req.params.propertyId);
 
     const numberField = {
       id: propertyId,
@@ -272,7 +308,7 @@ export const deleteProperty = async (req, res) => {
     await property.destroy();
 
     res.status(200).json({
-      message: "Successfully destroyed property",
+      message: "Successfully deleted property",
     });
   } catch (error) {
     console.error(error);

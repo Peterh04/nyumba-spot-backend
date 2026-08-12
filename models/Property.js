@@ -60,6 +60,11 @@ const Property = sequelize.define("Property", {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+  unit: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null,
+  },
   address: {
     type: DataTypes.STRING,
     allowNull: false,

@@ -12,6 +12,8 @@ import "./models/associations.js";
 import "./models/User.js";
 import "./models/Review.js";
 
+import propertRoutes from "./routes/propertyRoutes.js";
+
 dotenv.config();
 
 sequelize
@@ -23,6 +25,8 @@ sequelize
 const port = process.env.PORT || 5500;
 
 const app = express();
+app.use(express.json());
+app.use("/api/properties", propertRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json("Hi homepage");
