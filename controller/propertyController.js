@@ -185,11 +185,13 @@ export const updateProperty = async (req, res) => {
   try {
     const { description, price, furnished } = req.body;
 
-    const propertyId = Number(req.params.id);
-    if (!propertyId.isInteger(req.params.id))
+    const propertyId = Number(req.params.propertyId);
+
+    if (!Number.isInteger(propertyId)) {
       return res.status(400).json({
         message: "Property ID must be an integer.",
       });
+    }
 
     const allowedFields = ["description", "price", "furnished"];
     const fields = Object.keys(req.body);
@@ -315,5 +317,36 @@ export const deleteProperty = async (req, res) => {
     res.status(500).json({
       message: "Failed to delete property",
     });
+  }
+};
+
+export const getAllProperties = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 10;
+    let page = Number(req.query.page);
+    let parsedPage = Number.isInteger(page) ? page : 1;
+
+    const safeLimit = Math.max(1, Math.min(limit, 30));
+    const safePage = Math.max(1, parsedPage);
+    const safeOffset = (safePage - 1) * safeLimit;
+
+    const results = await Property.findAndCountAll({
+      limit: safeLimit,
+      offset: safeOffset,
+    });
+
+    const totalPages = Math.ceil(results.count / safeLimit);
+    res.status(200).json({
+      message: "Successfully fetched all properties",
+      propertiesResults: {
+        total_count_properties: results.count,
+        totalPages,
+        currentPage: safePage,
+        properties: results.rows,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get propperties" });
   }
 };
