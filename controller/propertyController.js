@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import Property from "../models/Property.js";
 import { checkBooleanFields } from "../utils/validation/checkInvalidBooleanFields.js";
 import { checkNumberFields } from "../utils/validation/checkNumberFields.js";
@@ -5,6 +6,7 @@ import { checkPositiveNumberFields } from "../utils/validation/checkPositiveNumb
 import { checkRangeFields } from "../utils/validation/checkRangeFields.js";
 import { checkRequiredFields } from "../utils/validation/checkRequiredFields.js";
 import { checkStringFields } from "../utils/validation/checkStringFields.js";
+import checkIntegerFields from "../utils/validation/checkIntegerFields.js";
 
 export const createProperty = async (req, res) => {
   try {
@@ -348,5 +350,203 @@ export const getAllProperties = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to get propperties" });
+  }
+};
+
+export const getPropertyById = async (req, res) => {
+  try {
+    const propertyId = Number(req.params.propertyId);
+
+    const numberField = {
+      id: propertyId,
+    };
+
+    if (checkNumberFields(numberField).length > 0)
+      return res.status(400).json({
+        message: "propertyId should be a number.",
+      });
+
+    if (checkPositiveNumberFields(numberField).length > 0)
+      return res.status(400).json({
+        message: "propertyId must be a positive number",
+      });
+
+    const property = await Property.findByPk(propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property does not exist" });
+
+    return res
+      .status(200)
+      .json({ message: "Successfully fetched property", property });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to get property" });
+  }
+};
+
+export const searchProperty = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 10;
+    let page = Number(req.query.page);
+    const parsedPage = Number.isInteger(page) ? page : 1;
+
+    const safeLimit = Math.max(1, Math.min(limit, 30));
+    const safePage = Math.max(1, parsedPage);
+    const safeOffset = (safePage - 1) * safeLimit;
+
+    const { property_location, beds, baths, minPrice, maxPrice, sort } =
+      req.query;
+
+    if (beds !== undefined && beds === "")
+      return res.status(400).json({ message: "Beds should not be empty" });
+    if (baths !== undefined && baths === "")
+      return res.status(400).json({ message: "Baths should not be empty" });
+    if (minPrice !== undefined && minPrice === "")
+      return res.status(400).json({ message: "minPrice should not be empty" });
+
+    if (maxPrice !== undefined && maxPrice === "")
+      return res.status(400).json({ message: "maxPrice should not be empty" });
+
+    let safeBeds = beds !== undefined && beds !== "" ? Number(beds) : null;
+    let safeBaths = baths !== undefined && baths !== "" ? Number(baths) : null;
+    let safeMinPrice = minPrice !== undefined ? Number(minPrice) : null;
+    let safeMaxPrice = maxPrice !== undefined ? Number(maxPrice) : null;
+
+    const safePropertyLocation =
+      property_location !== undefined ? property_location.trim() : null;
+
+    const numberFields = {};
+
+    const positiveFields = {};
+
+    const integerFields = {};
+
+    if (safeBeds !== null) {
+      numberFields.beds = safeBeds;
+      positiveFields.beds = safeBeds;
+      integerFields.beds = safeBeds;
+    }
+
+    if (safeBaths !== null) {
+      numberFields.baths = safeBaths;
+      positiveFields.baths = safeBaths;
+      integerFields.baths = safeBaths;
+    }
+
+    if (safeMinPrice !== null) {
+      numberFields.minPrice = safeMinPrice;
+      positiveFields.minPrice = safeMinPrice;
+    }
+    if (safeMaxPrice !== null) {
+      numberFields.maxPrice = safeMaxPrice;
+      positiveFields.maxPrice = safeMaxPrice;
+    }
+
+    const invalidNumberFields = checkNumberFields(numberFields);
+    if (invalidNumberFields.length > 0)
+      return res.status(400).json({
+        message: "Invalid number fields",
+        fields: invalidNumberFields,
+      });
+
+    const invalidPositiveNumberFields =
+      checkPositiveNumberFields(positiveFields);
+    if (invalidPositiveNumberFields.length > 0)
+      return res.status(400).json({
+        message: "Fields should be positive",
+        fields: invalidPositiveNumberFields,
+      });
+
+    if (safeMinPrice === null && safeMaxPrice !== null) safeMinPrice = 1;
+    if (safeMaxPrice === null && safeMinPrice !== null) safeMaxPrice = 4000000;
+
+    const invalidIntegerFields = checkIntegerFields(integerFields);
+
+    if (invalidIntegerFields.length > 0)
+      return res.status(400).json({
+        message: "Invalid integer fields",
+        fields: invalidIntegerFields,
+      });
+
+    if (
+      safeMinPrice !== null &&
+      safeMaxPrice !== null &&
+      safeMinPrice > safeMaxPrice
+    )
+      return res
+        .status(400)
+        .json({ message: "Min Price should be less than Max Price" });
+
+    let whereClause = {};
+    whereClause.price = {};
+
+    if (safePropertyLocation) {
+      whereClause.address = {
+        [Op.iLike]: `%${safePropertyLocation}%`,
+      };
+    }
+
+    if (safeBeds !== null) {
+      whereClause.bedrooms = {
+        [Op.eq]: safeBeds,
+      };
+    }
+
+    if (safeBaths !== null) {
+      whereClause.bathrooms = {
+        [Op.eq]: safeBaths,
+      };
+    }
+
+    if (safeMinPrice !== null) {
+      whereClause.price[Op.gte] = safeMinPrice;
+    }
+    if (safeMaxPrice !== null) {
+      whereClause.price[Op.lte] = safeMaxPrice;
+    }
+
+    let orderClause = [["createdAt", "DESC"]];
+
+    //Need to add ratings too
+    if (sort) {
+      switch (sort) {
+        case "beds":
+          orderClause.unshift(["bedrooms", "DESC"]);
+          break;
+        case "baths":
+          orderClause.unshift(["bathrooms", "DESC"]);
+          break;
+        case "lowPrice":
+          orderClause.unshift(["price", "ASC"]);
+          break;
+        case "highPrice":
+          orderClause.unshift(["price", "DESC"]);
+          break;
+      }
+    }
+
+    const filteredResults = await Property.findAndCountAll({
+      where: whereClause,
+      order: orderClause,
+      limit: safeLimit,
+      offset: safeOffset,
+    });
+
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredResults.count / safeLimit),
+    );
+    res.status(200).json({
+      message: "Successfully fetched filtered properties",
+      propertiesResults: {
+        total_count_properties: filteredResults.count,
+        totalPages,
+        currentPage: safePage,
+        properties: filteredResults.rows,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get properties" });
   }
 };
