@@ -7,6 +7,11 @@ import {
   getPropertyById,
   searchProperty,
 } from "../controller/propertyController.js";
+import {
+  getPropertyAmenities,
+  addAmenityProperty,
+  removeAmenityProperty,
+} from "../controller/amenityController.js";
 
 const router = express.Router();
 
@@ -16,5 +21,9 @@ router.get("/:propertyId", getPropertyById);
 router.post("/", createProperty);
 router.patch("/:propertyId", updateProperty);
 router.delete("/:propertyId", deleteProperty);
+
+router.get("/:propertyId/amenities", getPropertyAmenities);
+router.post("/:propertyId/amenities", addAmenityProperty);
+router.delete("/:propertyId/amenities", removeAmenityProperty);
 
 export default router;
