@@ -6,6 +6,169 @@ import { checkPositiveNumberFields } from "../utils/validation/checkPositiveNumb
 import { checkRequiredFields } from "../utils/validation/checkRequiredFields.js";
 import { checkStringFields } from "../utils/validation/checkStringFields.js";
 
+export const createPropertyAmenity = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    const field = {
+      name,
+    };
+
+    if (checkRequiredFields(field).length > 0)
+      return res
+        .status(400)
+        .json({ message: "Amenity name field is required" });
+
+    if (checkStringFields(field).length > 0)
+      return res
+        .status(400)
+        .json({ message: "Amenity name should be a string" });
+
+    const amenityExists = await Amenity.findOne({
+      where: { name: name },
+    });
+
+    if (amenityExists)
+      return res.status(400).json({ message: "Amenity already exists" });
+
+    await Amenity.create({ name });
+    res.status(201).json({ message: "Succesfully created the amenity" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json("Failed to create amenity");
+  }
+};
+
+export const updateAmenity = async (req, res) => {
+  try {
+    const amenityId = Number(req.params.amenityId);
+    const { name } = req.body;
+
+    const fields = {
+      amenityId: amenityId,
+      name,
+    };
+
+    const numberFields = {
+      amenityId: amenityId,
+    };
+
+    const stringFields = {
+      name,
+    };
+    const missingFields = checkRequiredFields(fields);
+
+    if (missingFields.length > 0)
+      return res
+        .status(400)
+        .json({ message: "Fields required", missingFields });
+
+    if (checkIntegerFields(numberFields).length > 0)
+      return res
+        .status(400)
+        .json({ message: "amenityId should be a whole number" });
+
+    if (checkPositiveNumberFields(numberFields).length > 0)
+      return res
+        .status(400)
+        .json({ message: "amenityId should be a positive whole number" });
+
+    if (checkStringFields(stringFields).length > 0)
+      return res
+        .status(400)
+        .json({ message: "Amenity name should be a string" });
+
+    const amenity = await Amenity.findByPk(amenityId);
+    if (!amenity) return res.status(404).json({ message: "Amenity not found" });
+
+    const amenityExists = await Amenity.findOne({
+      where: {
+        id: { [Op.ne]: amenityId },
+        name: name,
+      },
+    });
+
+    if (amenityExists)
+      return res
+        .status(400)
+        .json({ message: "Amennity with the same name already exists" });
+
+    await amenity.update({ name: name });
+    res.status(200).json({ message: "Successfully updated the amenity" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to update Amenity" });
+  }
+};
+
+export const deleteAmenity = async (req, res) => {
+  try {
+    const amenityId = Number(req.params.amenityId);
+
+    const fields = {
+      amenityId,
+    };
+
+    if (checkRequiredFields(fields).length > 0)
+      return res.status(400).json({ message: "AmenityId is required" });
+
+    if (checkIntegerFields(fields).length > 0)
+      return res
+        .status(400)
+        .json({ message: "amenityId should be a whole number" });
+
+    if (checkPositiveNumberFields(fields).length > 0)
+      return res
+        .status(400)
+        .json({ message: "amenityId should be a positive whole number" });
+
+    const amenity = await Amenity.findByPk(amenityId);
+    if (!amenity) return res.status(404).json({ message: "Amenity not found" });
+
+    await amenity.destroy();
+    return res
+      .status(200)
+      .json({ message: "Successfully deleted the amenity" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to delete amenity" });
+  }
+};
+
+export const getAllAmenities = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = Number(req.query.page);
+    const parsedPage = Number.isInteger(page) ? page : 1;
+
+    const safeLimit = Math.max(1, Math.min(limit, 20));
+    const safePage = Math.max(1, parsedPage);
+    const safeOffset = (safePage - 1) * safeLimit;
+
+    const results = await Amenity.findAndCountAll({
+      limit: safeLimit,
+      offset: safeOffset,
+      order: ["id"],
+    });
+
+    const totalPages = Math.ceil(results.count / safeLimit);
+    res.status(200).json({
+      message: "Successfully fetched all amenities",
+      amenities: {
+        totalAmenities: results.count,
+        totalPages,
+        currentPage: safePage,
+        amenities: results.rows,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Failed to get Amenities",
+    });
+  }
+};
+
 export const getPropertyAmenities = async (req, res) => {
   try {
     const propertyId = Number(req.params.propertyId);
