@@ -43,6 +43,7 @@ MoveInCost.belongsToMany(Property, {
   as: "properties",
   foreignKey: "moveCostId",
   otherKey: "propertyId",
+  onDelete: "CASCADE",
 });
 
 Property.belongsToMany(RuleRequirement, {

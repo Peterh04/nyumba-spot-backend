@@ -14,6 +14,7 @@ import "./models/Review.js";
 
 import propertRoutes from "./routes/propertyRoutes.js";
 import amenityRoutes from "./routes/amenityRoutes.js";
+import moveInCostRoutes from "./routes/moveInCostRoutes.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ const app = express();
 app.use(express.json());
 app.use("/api/properties", propertRoutes);
 app.use("/api/amenities", amenityRoutes);
+app.use("/api/move-in-costs", moveInCostRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json("Hi homepage");

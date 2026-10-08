@@ -13,6 +13,12 @@ import {
   removeAmenityProperty,
 } from "../controller/amenityController.js";
 
+import {
+  addPropertyMoveInCost,
+  deletePropertyMoveInCost,
+  editPropertyMoveInCost,
+} from "../controller/moveInCost.js";
+
 const router = express.Router();
 
 router.get("/", getAllProperties);
@@ -25,5 +31,9 @@ router.delete("/:propertyId", deleteProperty);
 router.get("/:propertyId/amenities", getPropertyAmenities);
 router.post("/:propertyId/amenities", addAmenityProperty);
 router.delete("/:propertyId/amenities", removeAmenityProperty);
+
+router.post("/:propertyId/moveInCosts", addPropertyMoveInCost);
+router.delete("/:propertyId/moveInCosts", deletePropertyMoveInCost);
+router.put("/:propertyId/moveInCosts", editPropertyMoveInCost);
 
 export default router;
