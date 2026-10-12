@@ -58,6 +58,7 @@ RuleRequirement.belongsToMany(Property, {
   as: "properties",
   foreignKey: "ruleRequirementId",
   otherKey: "propertyId",
+  onDelete: "CASCADE",
 });
 
 User.hasMany(Review, {

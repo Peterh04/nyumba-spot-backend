@@ -35,6 +35,12 @@ const User = sequelize.define("User", {
     type: DataTypes.ENUM("admin", "tenant", "landlord"),
     defaultValue: "tenant",
   },
+
+  email_verified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 });
 
 export default User;

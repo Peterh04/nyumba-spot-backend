@@ -3,11 +3,13 @@ import {
   createMoveInCost,
   deleteMoveInCosts,
   editMoveInCost,
-} from "../controller/moveInCost.js";
+} from "../controller/moveInCostController.js";
+import verifyToken from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
-router.post("/", createMoveInCost);
-router.delete("/:moveInCostId", deleteMoveInCosts);
-router.put("/:moveInCostId", editMoveInCost);
+router.post("/", verifyToken, createMoveInCost);
+router.delete("/:moveInCostId", verifyToken, deleteMoveInCosts);
+router.put("/:moveInCostId", verifyToken, editMoveInCost);
 
 export default router;

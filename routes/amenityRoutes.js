@@ -5,12 +5,13 @@ import {
   getAllAmenities,
   updateAmenity,
 } from "../controller/amenityController.js";
+import verifyToken from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", getAllAmenities);
-router.post("/", createPropertyAmenity);
-router.patch("/update/:amenityId", updateAmenity);
-router.delete("/delete/:amenityId", deleteAmenity);
+router.get("/", verifyToken, getAllAmenities);
+router.post("/", verifyToken, createPropertyAmenity);
+router.patch("/update/:amenityId", verifyToken, updateAmenity);
+router.delete("/delete/:amenityId", verifyToken, deleteAmenity);
 
 export default router;
