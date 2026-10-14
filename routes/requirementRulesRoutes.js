@@ -5,12 +5,18 @@ import {
   editRequirementRules,
 } from "../controller/RequirementsRulesController.js";
 
-import verifyToken from "../middleware/authMiddleware.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
+import verifyIsAdmin from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", verifyToken, createRequirementRules);
-router.delete("/", verifyToken, deleteRequirementRules);
-router.patch("/:requirementRuleId", verifyToken, editRequirementRules);
+router.post("/", verifyToken, verifyIsAdmin, createRequirementRules);
+router.delete("/", verifyToken, verifyIsAdmin, deleteRequirementRules);
+router.patch(
+  "/:requirementRuleId",
+  verifyToken,
+  verifyIsAdmin,
+  editRequirementRules,
+);
 
 export default router;

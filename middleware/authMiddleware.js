@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader)
@@ -27,4 +28,21 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-export default verifyToken;
+export const isEmailVerified = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "email_verified"],
+    });
+    if (!user)
+      return res.status(401).json({ message: "User account not found" });
+
+    if (user.email_verified !== true)
+      return res
+        .status(403)
+        .json({ message: "Email not veified. Please veriify email" });
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to verify if email is verified" });
+  }
+};
