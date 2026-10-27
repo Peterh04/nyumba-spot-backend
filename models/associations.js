@@ -1,5 +1,7 @@
 import Amenity from "./Amenity.js";
+import EmailVerification from "./EmailVerification.js";
 import MoveInCost from "./MoveInCost.js";
+import OtpRateLimit from "./OtpRateLimit.js";
 import Property from "./Property.js";
 import PropertyMedia from "./PropertyMedia.js";
 import PropertyMoveInCost from "./PropertyMoveInCost.js";
@@ -79,4 +81,42 @@ Review.belongsTo(Property, {
 Property.hasMany(Review, {
   as: "reviews",
   foreignKey: "propertyId",
+});
+
+EmailVerification.belongsTo(User, {
+  as: "user",
+  foreignKey: {
+    name: "userId",
+    allowNull: false,
+    unique: true,
+  },
+});
+
+User.hasOne(EmailVerification, {
+  as: "emailVerification",
+  foreignKey: {
+    name: "userId",
+    allowNull: false,
+    unique: true,
+  },
+  onDelete: "CASCADE",
+});
+
+OtpRateLimit.belongsTo(User, {
+  as: "user",
+  foreignKey: {
+    name: "userId",
+    allowNull: false,
+    unique: true,
+  },
+});
+
+User.hasOne(OtpRateLimit, {
+  as: "rateLimit",
+  foreignKey: {
+    name: "userId",
+    allowNull: false,
+    unique: true,
+  },
+  onDelete: "CASCADE",
 });

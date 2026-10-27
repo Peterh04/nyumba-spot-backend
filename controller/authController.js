@@ -6,6 +6,7 @@ import checkIntegerFields from "../utils/validation/checkIntegerFields.js";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import issueEmailVerification from "../services/otpServices.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -93,11 +94,21 @@ export const registerUser = async (req, res) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
 
-    await User.create({
+    const user = await User.create({
       name: modifiedName.join(" "),
       email: modifiedEmail,
       password: hashPassword,
     });
+
+    try {
+      await issueEmailVerification(user.id, modifiedEmail);
+    } catch (error) {
+      console.error(error);
+      return res.status(201).json({
+        message: "Successfully created the user but failed to send the OTP",
+      });
+    }
+
     res.status(201).json({ message: "Successfully created the user" });
   } catch (error) {
     console.error(error);
@@ -136,7 +147,7 @@ export const loginUser = async (req, res) => {
     });
 
     if (!user)
-      return res.status(404).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid email or password" });
 
     const match = await bcrypt.compare(password, user.password);
     if (!match)

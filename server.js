@@ -17,6 +17,8 @@ import propertRoutes from "./routes/propertyRoutes.js";
 import amenityRoutes from "./routes/amenityRoutes.js";
 import moveInCostRoutes from "./routes/moveInCostRoutes.js";
 import requirementRulesRoutes from "./routes/requirementRulesRoutes.js";
+import emailVerificationRoutes from "./routes/emailVerificationRoutes.js";
+import cors from "cors";
 
 dotenv.config();
 
@@ -29,12 +31,15 @@ sequelize
 const port = process.env.PORT || 5500;
 
 const app = express();
+
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 app.use("/api/users", authRoutes);
 app.use("/api/properties", propertRoutes);
 app.use("/api/amenities", amenityRoutes);
 app.use("/api/move-in-costs", moveInCostRoutes);
 app.use("/api/rules-requirements", requirementRulesRoutes);
+app.use("/api/email-verification/otp", emailVerificationRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json("Hi homepage");
