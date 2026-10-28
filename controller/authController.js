@@ -7,6 +7,18 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import issueEmailVerification from "../services/otpServices.js";
+import ExternalIdentity from "../models/Externaldentity.js";
+import sequelize from "../config/db.js";
+import verifyGoogleIdToken from "../utils/verifyGoogleIdToken.js";
+
+const logger = {
+  info: (msg, meta = {}) =>
+    console.log(JSON.stringify({ level: "info", message: msg, ...meta })),
+  error: (msg, meta = {}) =>
+    console.error(JSON.stringify({ level: "error", message: msg, ...meta })),
+  warn: (msg, meta = {}) =>
+    console.warn(JSON.stringify({ level: "warn", message: msg, ...meta })),
+};
 
 export const registerUser = async (req, res) => {
   try {
@@ -204,6 +216,165 @@ export const logoutUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to logout user" });
+  }
+};
+
+export const googleLoginUser = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    const fields = {
+      credential,
+    };
+
+    const invalidRequiredFields = checkRequiredFields(fields);
+
+    if (invalidRequiredFields.length > 0)
+      return res.status(400).json({
+        message: "Missing required fields",
+        fields: invalidRequiredFields,
+      });
+
+    const invaidStringFields = checkStringFields(fields);
+
+    if (invaidStringFields.length > 0)
+      return res.status(400).json({
+        message: "Invalid String fields",
+        fields: invaidStringFields,
+      });
+
+    const payload = await verifyGoogleIdToken(credential);
+    const sub = payload.sub;
+    const email = payload.email;
+    const name = payload.name;
+
+    let modifiedEmail = email.toLowerCase().trim();
+
+    const externalIdentity = await ExternalIdentity.findOne({
+      where: { provider: "google", providerUserId: sub },
+      attributes: ["userId"],
+    });
+
+    if (externalIdentity) {
+      const user = await User.findByPk(externalIdentity.userId);
+
+      if (user === null) {
+        logger.error(
+          "Database inconsistency detected: Identity record exists but associated User profile is missing",
+          {
+            providerUserId: sub,
+            expectedUserId: externalIdentity.userId,
+          },
+        );
+
+        return res
+          .status(500)
+          .json({ message: "Failed to sign in with Google" });
+      }
+
+      const simplifiedUser = {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      };
+
+      const token = jwt.sign(simplifiedUser, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+
+      const refresh_token = jwt.sign(
+        simplifiedUser,
+        process.env.JWT_REFRESH_SECRET,
+        {
+          expiresIn: "7d",
+        },
+      );
+
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        // secure: false, //cause I am still on development not yet hosted the backend
+        // sameSite: "none",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.status(200).json({
+        message: "Successfully logged in",
+        token,
+        user: simplifiedUser,
+      });
+    }
+
+    const user = await User.findOne({ where: { email: modifiedEmail } });
+
+    if (user)
+      return res.status(409).json({ message: "Please login with email" });
+
+    let result;
+
+    try {
+      result = await sequelize.transaction(async (t) => {
+        const newUser = await User.create(
+          {
+            name: name,
+            email: modifiedEmail,
+            password: null,
+            email_verified: true,
+          },
+          { transaction: t },
+        );
+
+        await ExternalIdentity.create(
+          {
+            provider: "google",
+            userId: newUser.id,
+            providerUserId: sub,
+          },
+          { transaction: t },
+        );
+        return newUser;
+      });
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({ message: "Failed to create an acccount with google sigin" });
+    }
+
+    const newUser = result;
+
+    const simplifiedUser = {
+      id: newUser.id,
+      name: newUser.name,
+      role: newUser.role,
+    };
+
+    const token = jwt.sign(simplifiedUser, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    const refresh_token = jwt.sign(
+      simplifiedUser,
+      process.env.JWT_REFRESH_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
+
+    res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      // secure: false, //cause I am still on development not yet hosted the backend
+      // sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      message: "Successfully logged in",
+      token,
+      user: simplifiedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to sign in with google" });
   }
 };
 

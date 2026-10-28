@@ -82,10 +82,7 @@ export const verifyOTP = async (req, res) => {
     if (emailVerification.attempts === 5)
       return res
         .status(400)
-        .json({
-          message:
-            "Maximum number of OTP attempts reached.Please request another",
-        });
+        .json({ message: "Maximum number of incorrect attempts reached" });
 
     if (
       otpHash !== emailVerification.otpHash &&
@@ -98,7 +95,7 @@ export const verifyOTP = async (req, res) => {
       if (emailVerification.attempts === 5)
         return res
           .status(400)
-          .json({ message: "Maximum number attempts reached" });
+          .json({ message: "Maximum number of incorrect attempts reached" });
       return res.status(400).json({ message: "Incorect OTP" });
     }
 
@@ -172,7 +169,8 @@ export const resendOTP = async (req, res) => {
           )
         : 0;
       return res.status(400).json({
-        message: `Maximum number of resend attempts reached.Please try again after ${remainigSeconds}s`,
+        message: `Maximum number of resend attempts reached. Please try again later`,
+        CODE: "MAX_RESEND_ERROR",
       });
     }
 

@@ -1,5 +1,6 @@
 import Amenity from "./Amenity.js";
 import EmailVerification from "./EmailVerification.js";
+import ExternalIdentity from "./Externaldentity.js";
 import MoveInCost from "./MoveInCost.js";
 import OtpRateLimit from "./OtpRateLimit.js";
 import Property from "./Property.js";
@@ -119,4 +120,18 @@ User.hasOne(OtpRateLimit, {
     unique: true,
   },
   onDelete: "CASCADE",
+});
+
+ExternalIdentity.belongsTo(User, {
+  as: "user",
+  foreignKey: {
+    name: "userId",
+  },
+});
+
+User.hasMany(ExternalIdentity, {
+  as: "externalIdentities",
+  foreignKey: {
+    name: "userId",
+  },
 });
