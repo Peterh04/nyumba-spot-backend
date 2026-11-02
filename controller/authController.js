@@ -381,6 +381,7 @@ export const googleLoginUser = async (req, res) => {
 export const refreshToken = async (req, res) => {
   try {
     const token = req.cookies?.refresh_token;
+    console.log("Refresh cookie exists:", !!token);
     if (!token)
       return res
         .status(401)
